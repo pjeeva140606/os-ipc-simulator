@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IPC Simulator — Inter-Process Communication</title>
+  <meta name="description" content="Interactive browser-based simulator demonstrating Inter-Process Communication (IPC) mechanisms: Message Passing, Semaphores, and Shared Memory.">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ═══════════ HEADER ═══════════ -->
+  <header class="app-header">
+    <div class="header-left">
+      <h1 id="app-title"><span class="icon">⚡</span> IPC Simulator</h1>
+      <p class="subtitle">Inter-Process Communication &bull; Operating Systems</p>
+    </div>
+    <div class="header-right">
+      <div class="global-controls">
+        <button id="btn-start" class="ctrl-btn ctrl-start" title="Start simulation"><span class="btn-icon">▶</span> Start</button>
+        <button id="btn-pause" class="ctrl-btn ctrl-pause" title="Pause simulation" disabled><span class="btn-icon">⏸</span> Pause</button>
+        <button id="btn-step" class="ctrl-btn ctrl-step" title="Execute one step"><span class="btn-icon">⏭</span> Step</button>
+        <button id="btn-reset" class="ctrl-btn ctrl-reset" title="Reset simulation"><span class="btn-icon">↺</span> Reset</button>
+        <div class="speed-control">
+          <label for="speed-slider">Speed</label>
+          <input type="range" id="speed-slider" min="1" max="10" value="5" step="1">
+          <span id="speed-value" class="speed-val">5×</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════ TAB NAVIGATION ═══════════ -->
+  <nav class="tab-nav" id="tab-nav">
+    <button class="tab-btn active" data-tab="message-passing">
+      <span class="tab-icon">📨</span> Message Passing
+    </button>
+    <button class="tab-btn" data-tab="semaphores">
+      <span class="tab-icon">🔒</span> Semaphores
+    </button>
+    <button class="tab-btn" data-tab="shared-memory">
+      <span class="tab-icon">🧠</span> Shared Memory
+    </button>
+  </nav>
+
+  <!-- ═══════════ MAIN DASHBOARD ═══════════ -->
+  <main class="dashboard">
+
+    <!-- ───── Content Area ───── -->
+    <div class="content-area">
+
+      <!-- ┌─────────────────────────────────────────────────────┐ -->
+      <!-- │            MODULE 1: MESSAGE PASSING                │ -->
+      <!-- └─────────────────────────────────────────────────────┘ -->
+      <section id="tab-message-passing" class="tab-content active">
+        <div class="concept-panel">
+          <h3>💡 Concept: Message Passing</h3>
+          <p>Processes communicate by exchanging messages through <strong>send()</strong> and <strong>receive()</strong> primitives. Communication can be <em>direct</em> (naming the recipient) or <em>indirect</em> (via a shared mailbox). A <em>blocking</em> send waits for the receiver's acknowledgement; a <em>non-blocking</em> send returns immediately. Reliable delivery uses sequence numbers, ACKs, and timeout-based retransmission.</p>
+        </div>
+
+        <div class="mp-layout">
+          <!-- Controls Panel -->
+          <div class="mp-controls card">
+            <h3>Send Message</h3>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="mp-sender">From</label>
+                <select id="mp-sender">
+                  <option value="P1">P1</option>
+                  <option value="P2">P2</option>
+                  <option value="P3">P3</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="mp-receiver">To</label>
+                <select id="mp-receiver">
+                  <option value="P2">P2</option>
+                  <option value="P1">P1</option>
+                  <option value="P3">P3</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="mp-payload">Payload</label>
+              <input type="text" id="mp-payload" placeholder="Hello from P1!" value="Hello!">
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-group">
+                <label>Mode</label>
+                <div class="toggle-switch">
+                  <button id="mp-blocking-on" class="toggle-opt active" data-val="blocking">Blocking</button>
+                  <button id="mp-blocking-off" class="toggle-opt" data-val="nonblocking">Non-Blocking</button>
+                </div>
+              </div>
+              <div class="toggle-group">
+                <label>Channel</label>
+                <div class="toggle-switch">
+                  <button id="mp-direct-on" class="toggle-opt active" data-val="direct">Direct</button>
+                  <button id="mp-direct-off" class="toggle-opt" data-val="indirect">Indirect</button>
+                </div>
+              </div>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-group">
+                <label>ACK / Retransmit</label>
+                <div class="toggle-switch">
+                  <button id="mp-ack-on" class="toggle-opt active" data-val="on">ON</button>
+                  <button id="mp-ack-off" class="toggle-opt" data-val="off">OFF</button>
+                </div>
+              </div>
+              <div class="toggle-group">
+                <label>Auto-demo</label>
+                <div class="toggle-switch">
+                  <button id="mp-auto-on" class="toggle-opt" data-val="on">ON</button>
+                  <button id="mp-auto-off" class="toggle-opt active" data-val="off">OFF</button>
+                </div>
+              </div>
+            </div>
+            <button id="mp-send-btn" class="action-btn">📤 Send Message</button>
+          </div>
+
+          <!-- Visualization Area -->
+          <div class="mp-viz-area card">
+            <h3>Process Network</h3>
+            <div class="mp-process-container" id="mp-process-container">
+              <!-- Shared Mailbox (for indirect mode) -->
+              <div id="mp-shared-mailbox" class="mp-shared-mailbox hidden">
+                <div class="mailbox-label">📬 Shared Mailbox</div>
+                <div id="mp-shared-mailbox-queue" class="mailbox-queue"></div>
+              </div>
+              <!-- Process P1 -->
+              <div class="mp-process-node" id="mp-node-P1" data-pid="P1">
+                <div class="proc-header">
+                  <span class="state-dot" id="mp-state-P1"></span>
+                  <span class="proc-name">P1</span>
+                </div>
+                <div class="proc-mailbox">
+                  <div class="mailbox-label">📥 Mailbox</div>
+                  <div id="mp-mailbox-P1" class="mailbox-queue"></div>
+                </div>
+              </div>
+              <!-- Process P2 -->
+              <div class="mp-process-node" id="mp-node-P2" data-pid="P2">
+                <div class="proc-header">
+                  <span class="state-dot" id="mp-state-P2"></span>
+                  <span class="proc-name">P2</span>
+                </div>
+                <div class="proc-mailbox">
+                  <div class="mailbox-label">📥 Mailbox</div>
+                  <div id="mp-mailbox-P2" class="mailbox-queue"></div>
+                </div>
+              </div>
+              <!-- Process P3 -->
+              <div class="mp-process-node" id="mp-node-P3" data-pid="P3">
+                <div class="proc-header">
+                  <span class="state-dot" id="mp-state-P3"></span>
+                  <span class="proc-name">P3</span>
+                </div>
+                <div class="proc-mailbox">
+                  <div class="mailbox-label">📥 Mailbox</div>
+                  <div id="mp-mailbox-P3" class="mailbox-queue"></div>
+                </div>
+              </div>
+            </div>
+            <!-- Message format display -->
+            <div class="mp-message-format" id="mp-message-format">
+              <h4>Last Message</h4>
+              <div class="msg-fields">
+                <div class="msg-field"><span class="field-label">Sender</span><span class="field-value" id="mp-fmt-sender">—</span></div>
+                <div class="msg-field"><span class="field-label">Receiver</span><span class="field-value" id="mp-fmt-receiver">—</span></div>
+                <div class="msg-field"><span class="field-label">Type</span><span class="field-value" id="mp-fmt-type">—</span></div>
+                <div class="msg-field"><span class="field-label">Payload</span><span class="field-value" id="mp-fmt-payload">—</span></div>
+                <div class="msg-field"><span class="field-label">Seq #</span><span class="field-value" id="mp-fmt-seq">—</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ┌─────────────────────────────────────────────────────┐ -->
+      <!-- │            MODULE 2: SEMAPHORES                     │ -->
+      <!-- └─────────────────────────────────────────────────────┘ -->
+      <section id="tab-semaphores" class="tab-content">
+        <div class="concept-panel">
+          <h3>💡 Concept: Semaphores</h3>
+          <p>A <strong>semaphore</strong> is a synchronization primitive with an integer value and two atomic operations: <em>wait()</em> (decrement; block if value &lt; 0) and <em>signal()</em> (increment; unblock one waiting process). A <em>binary semaphore</em> (0 or 1) acts as a mutex. In <strong>Producer-Consumer</strong>, three semaphores coordinate access: <code>empty</code> (free slots), <code>full</code> (filled slots), and <code>mutex</code> (critical-section guard).</p>
+        </div>
+
+        <div class="sem-layout">
+          <!-- Controls -->
+          <div class="sem-controls card">
+            <h3>Configuration</h3>
+            <div class="slider-group">
+              <label>Producers: <strong id="sem-prod-val">2</strong></label>
+              <input type="range" id="sem-producers" min="1" max="5" value="2">
+            </div>
+            <div class="slider-group">
+              <label>Consumers: <strong id="sem-cons-val">2</strong></label>
+              <input type="range" id="sem-consumers" min="1" max="5" value="2">
+            </div>
+            <div class="slider-group">
+              <label>Buffer Size: <strong id="sem-buf-val">6</strong></label>
+              <input type="range" id="sem-buffer-size" min="3" max="12" value="6">
+            </div>
+            <div class="slider-group">
+              <label>Speed: <strong id="sem-speed-val">5</strong></label>
+              <input type="range" id="sem-speed" min="1" max="10" value="5">
+            </div>
+            <div class="sem-stats">
+              <div class="stat"><span class="stat-label">Produced</span><span class="stat-value" id="sem-produced">0</span></div>
+              <div class="stat"><span class="stat-label">Consumed</span><span class="stat-value" id="sem-consumed">0</span></div>
+            </div>
+          </div>
+
+          <!-- Visualization -->
+          <div class="sem-viz card">
+            <h3>Bounded Buffer</h3>
+            <!-- Semaphore values -->
+            <div class="sem-values">
+              <div class="sem-badge sem-empty">
+                <span class="sem-name">empty</span>
+                <span class="sem-val" id="sem-empty-val">6</span>
+              </div>
+              <div class="sem-badge sem-full">
+                <span class="sem-name">full</span>
+                <span class="sem-val" id="sem-full-val">0</span>
+              </div>
+              <div class="sem-badge sem-mutex">
+                <span class="sem-name">mutex</span>
+                <span class="sem-val" id="sem-mutex-val">1</span>
+              </div>
+            </div>
+            <!-- Buffer visualization -->
+            <div class="buffer-container">
+              <div class="buffer-label-left">IN ▸</div>
+              <div class="buffer-slots" id="sem-buffer"></div>
+              <div class="buffer-label-right">▸ OUT</div>
+            </div>
+            <!-- Process lists -->
+            <div class="sem-processes">
+              <div class="sem-proc-group">
+                <h4>🏭 Producers</h4>
+                <div id="sem-producer-list" class="proc-list"></div>
+              </div>
+              <div class="sem-proc-group">
+                <h4>📦 Consumers</h4>
+                <div id="sem-consumer-list" class="proc-list"></div>
+              </div>
+            </div>
+            <!-- Blocked queue -->
+            <div class="blocked-queue-section">
+              <h4>⏳ Blocked Queue</h4>
+              <div id="sem-blocked-queue" class="blocked-queue">
+                <span class="empty-label">No blocked processes</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ┌─────────────────────────────────────────────────────┐ -->
+      <!-- │            MODULE 3: SHARED MEMORY                  │ -->
+      <!-- └─────────────────────────────────────────────────────┘ -->
+      <section id="tab-shared-memory" class="tab-content">
+        <div class="concept-panel">
+          <h3>💡 Concept: Shared Memory &amp; Race Conditions</h3>
+          <p>In <strong>shared-memory IPC</strong>, processes read and write a common memory region. Without synchronization, concurrent access causes <em>race conditions</em>: the outcome depends on the execution order. A classic example is two processes incrementing a shared counter—<em>lost updates</em> occur when read-modify-write steps interleave. A <strong>mutex</strong> (mutual exclusion) protects the <em>critical section</em> to ensure correctness.</p>
+        </div>
+
+        <div class="sm-layout">
+          <!-- Controls -->
+          <div class="sm-controls card">
+            <h3>Configuration</h3>
+            <div class="toggle-group sm-sync-group">
+              <label>Synchronization</label>
+              <div class="toggle-switch">
+                <button id="sm-sync-off" class="toggle-opt active" data-val="off">OFF 🔓</button>
+                <button id="sm-sync-on" class="toggle-opt" data-val="on">ON 🔒</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="sm-iterations">Iterations per process</label>
+              <input type="number" id="sm-iterations" value="20" min="5" max="200" step="5">
+            </div>
+            <button id="sm-run-btn" class="action-btn">▶ Run Race Condition Demo</button>
+            <div class="sm-results-box" id="sm-results-box">
+              <div class="result-row">
+                <span class="result-label">Expected</span>
+                <span class="result-value result-expected" id="sm-expected">—</span>
+              </div>
+              <div class="result-row">
+                <span class="result-label">Actual</span>
+                <span class="result-value result-actual" id="sm-actual">—</span>
+              </div>
+              <div class="result-row">
+                <span class="result-label">Lost Updates</span>
+                <span class="result-value result-lost" id="sm-lost">—</span>
+              </div>
+              <div id="sm-verdict" class="sm-verdict"></div>
+            </div>
+          </div>
+
+          <!-- Visualization -->
+          <div class="sm-viz card">
+            <h3>Shared Memory Segment</h3>
+            <!-- Shared Counter -->
+            <div class="sm-counter-section">
+              <div class="sm-counter-box">
+                <div class="counter-label">Shared Counter</div>
+                <div class="counter-value" id="sm-counter-display">0</div>
+              </div>
+              <div class="sm-mutex-indicator" id="sm-mutex-box">
+                <span class="mutex-label">Mutex</span>
+                <span class="mutex-state" id="sm-mutex-state">UNLOCKED</span>
+              </div>
+            </div>
+
+            <!-- Process panels -->
+            <div class="sm-process-panels">
+              <div class="sm-proc-panel" id="sm-panel-P1">
+                <div class="proc-header">
+                  <span class="state-dot" id="sm-state-P1"></span>
+                  <span class="proc-name">Process P1</span>
+                </div>
+                <div class="proc-step-display">
+                  <div class="step-item"><span class="step-label">Local Read</span><span id="sm-p1-read" class="step-val">—</span></div>
+                  <div class="step-item"><span class="step-label">Modify (+1)</span><span id="sm-p1-modify" class="step-val">—</span></div>
+                  <div class="step-item"><span class="step-label">Write Back</span><span id="sm-p1-write" class="step-val">—</span></div>
+                </div>
+                <div class="proc-progress">
+                  <div class="progress-bar"><div class="progress-fill" id="sm-p1-progress"></div></div>
+                  <span id="sm-p1-count" class="progress-label">0 / 0</span>
+                </div>
+              </div>
+              <div class="sm-proc-panel" id="sm-panel-P2">
+                <div class="proc-header">
+                  <span class="state-dot" id="sm-state-P2"></span>
+                  <span class="proc-name">Process P2</span>
+                </div>
+                <div class="proc-step-display">
+                  <div class="step-item"><span class="step-label">Local Read</span><span id="sm-p2-read" class="step-val">—</span></div>
+                  <div class="step-item"><span class="step-label">Modify (+1)</span><span id="sm-p2-modify" class="step-val">—</span></div>
+                  <div class="step-item"><span class="step-label">Write Back</span><span id="sm-p2-write" class="step-val">—</span></div>
+                </div>
+                <div class="proc-progress">
+                  <div class="progress-bar"><div class="progress-fill" id="sm-p2-progress"></div></div>
+                  <span id="sm-p2-count" class="progress-label">0 / 0</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Interleaving Timeline -->
+            <div class="sm-interleaving-section">
+              <h4>⏱ Execution Interleaving</h4>
+              <div id="sm-interleaving" class="interleaving-timeline"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /.content-area -->
+
+    <!-- ───── Event Log Sidebar ───── -->
+    <aside class="event-log-panel">
+      <div class="log-header">
+        <h3>📋 Event Log</h3>
+        <button id="log-clear-btn" class="mini-btn" title="Clear log">✕</button>
+      </div>
+      <div id="event-log" class="event-log-entries"></div>
+    </aside>
+
+  </main><!-- /.dashboard -->
+
+  <!-- ═══════════ PROCESS STATE BAR ═══════════ -->
+  <footer class="process-bar">
+    <div class="state-legend">
+      <span class="legend-item"><span class="legend-dot state-ready"></span> Ready</span>
+      <span class="legend-item"><span class="legend-dot state-running"></span> Running</span>
+      <span class="legend-item"><span class="legend-dot state-waiting"></span> Waiting</span>
+      <span class="legend-item"><span class="legend-dot state-blocked"></span> Blocked</span>
+      <span class="legend-item"><span class="legend-dot state-terminated"></span> Terminated</span>
+    </div>
+    <div id="process-states" class="process-state-indicators"></div>
+  </footer>
+
+  <!-- Scripts (order matters) -->
+  <script src="js/utils.js"></script>
+  <script src="js/messagePassing.js"></script>
+  <script src="js/semaphores.js"></script>
+  <script src="js/sharedMemory.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
