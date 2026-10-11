@@ -1,8 +1,12 @@
 # IPC Simulator — Inter-Process Communication
 
-An interactive, browser-based simulator demonstrating core IPC mechanisms for an Operating Systems course. No backend, no build step — just open `index.html`.
+An interactive, browser-based simulator demonstrating core IPC mechanisms for an Operating Systems course. No backend, no build step.
+
+🌐 **Live Demo:** [https://pjeeva140606.github.io/os-ipc-simulator/](https://pjeeva140606.github.io/os-ipc-simulator/)  
+📁 **Repository:** [https://github.com/pjeeva140606/os-ipc-simulator](https://github.com/pjeeva140606/os-ipc-simulator)
 
 ## How to Run
+
 
 1. Open `index.html` in any modern browser (Chrome, Firefox, Edge).
 2. Use the tabs to switch between modules.
